@@ -23,8 +23,8 @@ def scrap_table(parser):
 
 
 def scrap_links_page():
-    # carrers goes from 1 to 180
-    # Need to test if carreer have
+    # races goes from 1 to 180
+    # Need to test if race have subraces inside
     link_content = requests.get("http://results.lineameta.com/StartPage.aspx?CId=17013&From=1").content
     parser = BeautifulSoup(link_content, "html.parser")
     all_races_table = parser.select("#tblAllRaces tr")
