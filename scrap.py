@@ -23,10 +23,31 @@ def scrap_table(parser):
 
 
 def scrap_links_page():
-    link_content = requests.get("http://results.lineameta.com/StartPage.aspx?CId=17013&From=1")
+    # carrers goes from 1 to 180
+    # Need to test if carreer have
+    link_content = requests.get("http://results.lineameta.com/StartPage.aspx?CId=17013&From=1").content
     parser = BeautifulSoup(link_content, "html.parser")
     all_races_table = parser.select("#tblAllRaces tr")
     print(all_races_table[0])
+
+    link = all_races_table[0].td.a.get("href")  # Get part  of the link without domain
+    race = all_races_table[0].text
+    # full_link = f"http://results.lineameta.com/{link}"
+    full_link = "http://results.lineameta.com/results.aspx?CId=17013&RId=84"  # Override full link for one with subraces for test
+    print(link)
+    print(race)
+
+    # testing link this race have sub_races like 10k, 5k etc.
+    race_content = requests.get(full_link).content
+    t_parser = BeautifulSoup(race_content, "html.parser")
+    sub_races = t_parser.select("ul#ctl00_Content_Main_divEvents li.nav-item" )
+    print(sub_races)
+    if sub_races:
+        for li in sub_races:
+            print(li.text)
+            print(li.a.get("href"))
+
+
 
 
 def scrap_page_data():
