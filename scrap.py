@@ -25,34 +25,45 @@ def scrap_table(parser):
 def scrap_links_page():
     # races goes from 1 to 180
     # Need to test if race have subraces inside
-    link_content = requests.get("http://results.lineameta.com/StartPage.aspx?CId=17013&From=1").content
-    parser = BeautifulSoup(link_content, "html.parser")
-    all_races_table = parser.select("#tblAllRaces tr")
-    print(all_races_table[0])
+    with open("race_links.csv", "w") as races_file:
+            races_file.write("name,date,link\n")
 
-    link = all_races_table[0].td.a.get("href")  # Get part  of the link without domain
-    race = all_races_table[0].text
-    # full_link = f"http://results.lineameta.com/{link}"
-    full_link = "http://results.lineameta.com/results.aspx?CId=17013&RId=84"  # Override full link for one with subraces for test
-    print(link)
-    print(race)
+    for g in range(1, 182, 20):
+        home_page = f"http://results.lineameta.com/StartPage.aspx?CId=17013&From={g}"
+        print(f"Retrieving links from {home_page}")
+        link_content = requests.get(home_page).content
+        parser = BeautifulSoup(link_content, "html.parser")
+        all_races_table = parser.select("#tblAllRaces tr")
+        for race in all_races_table:
+            td = race.findAll("td")
+            race_link_part = td[1].a.get("href")  # Get part  of the link without domain
+            race_date = td[0].span.text
+            race_name = td[1].a.text
+            race_link = f"http://results.lineameta.com/{race_link_part}"
 
-    # testing link this race have sub_races like 10k, 5k etc.
-    race_content = requests.get(full_link).content
-    t_parser = BeautifulSoup(race_content, "html.parser")
-    sub_races = t_parser.select("ul#ctl00_Content_Main_divEvents li.nav-item" )
-    print(sub_races)
-    if sub_races:
-        for li in sub_races:
-            print(li.text)
-            print(li.a.get("href"))
+            # testing link this race have sub_races like 10k, 5k etc.
+            race_content = requests.get(race_link).content
+            t_parser = BeautifulSoup(race_content, "html.parser")
+            sub_races = t_parser.select("ul#ctl00_Content_Main_divEvents li.nav-item" )
+
+            with open("race_links.csv", "a") as races_file:
+                if sub_races:
+                    for li in sub_races:
+                        race_sub_category = li.text
+                        race_sub_category = race_sub_category.strip()
+                        sub_race_link = f"http://results.lineameta.com/{li.a.get('href')}"
+                        # Here name of subraces must be constructed appending the distance to name
+                        race_data = f"{race_name},{race_date}_{race_sub_category},{sub_race_link}\n"
+                        print(race_data)
+                        races_file.write(race_data)
+                else:
+                    race_data = f"{race_name},{race_date},{race_link}\n"
+                    print(race_data)
+                    races_file.write(race_data)
 
 
-
-
-def scrap_page_data():
+def scrap_page_data(url_, file_name="scrapped_file.csv"):
     s = requests.Session()
-    url_ = "http://results.lineameta.com/results.aspx?CId=17013&RId=245"
     response = s.get(url_)
     content = response.content
     parser = BeautifulSoup(content, "html.parser")
@@ -60,7 +71,7 @@ def scrap_page_data():
     # Creating File and saving First page
 
     try:
-        with open("10k_run.csv", "w") as f:
+        with open(file_name, "w") as f:
             f.write(scrap_table_header(parser))
             f.writelines(scrap_table(parser))
     except PermissionError:
@@ -87,7 +98,7 @@ def scrap_page_data():
         navigator = parser.select("#ctl00_Content_Main_grdTopPager")
 
         try:
-            with open("10k_run.txt", "a") as f:
+            with open(file_name, "a") as f:
                 f.writelines(scrap_table(parser))
         except (FileNotFoundError, PermissionError):
             print("file could not be written and program can not continue")
