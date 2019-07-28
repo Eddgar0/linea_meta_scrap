@@ -1,6 +1,7 @@
 from bs4 import BeautifulSoup
 import requests
 import re
+import csv
 
 
 def scrap_table_header(parser):
@@ -37,8 +38,8 @@ def scrap_links_page():
         for race in all_races_table:
             td = race.findAll("td")
             race_link_part = td[1].a.get("href")  # Get part  of the link without domain
-            race_date = td[0].span.text
-            race_name = td[1].a.text
+            race_date = td[0].span.text.strip()
+            race_name = td[1].a.text.strip()
             race_link = f"http://results.lineameta.com/{race_link_part}"
 
             # testing link this race have sub_races like 10k, 5k etc.
@@ -67,7 +68,7 @@ def scrap_page_data(url_, file_name="scrapped_file.csv"):
     response = s.get(url_)
     content = response.content
     parser = BeautifulSoup(content, "html.parser")
-
+    print(f"processing {file_name}")
     # Creating File and saving First page
 
     try:
@@ -89,7 +90,7 @@ def scrap_page_data(url_, file_name="scrapped_file.csv"):
         js_method = page_data.get("href")
         event_target = re.findall(pattern, js_method)[0]
         view_state = parser.find("input", id="__VIEWSTATE")["value"]
-        print(page, event_target)
+        print(f"Getting data for page{page}")
 
         form_data = {"__EVENTTARGET": event_target, "__VIEWSTATE": view_state}
         response = s.post(url_,  data=form_data, )
@@ -108,3 +109,7 @@ def scrap_page_data(url_, file_name="scrapped_file.csv"):
 
 
 scrap_links_page()
+with open("races_file.csv", "r") as race_file:
+    race_reader = csv.DictReader(race_file)
+    for row in race_reader:
+        scrap_page_data(row["link"], file_name=f"{row['name']}_{row['date']}.csv")
