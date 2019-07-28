@@ -54,7 +54,7 @@ def scrap_links_page():
                         race_sub_category = race_sub_category.strip()
                         sub_race_link = f"http://results.lineameta.com/{li.a.get('href')}"
                         # Here name of subraces must be constructed appending the distance to name
-                        race_data = f"{race_name},{race_date}_{race_sub_category},{sub_race_link}\n"
+                        race_data = f"{race_name}_{race_sub_category},{race_date},{sub_race_link}\n"
                         print(race_data)
                         races_file.write(race_data)
                 else:
