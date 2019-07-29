@@ -82,8 +82,9 @@ def scrap_page_data(url_, file_name="scrapped_file.csv"):
 
     navigator = parser.select("#ctl00_Content_Main_grdTopPager")
     numbers = navigator[0].find_all("a")
-    last_number = int(numbers[-1].text)
-
+    numbers = [n.text for n in numbers]
+    numbers = [int(n) for n in numbers if n.isdigit()]
+    last_number = numbers[-1]
     for page in range(2, last_number + 1):
         page_data = navigator[0].find("a", string=page)
         pattern = r"(ctl00\$Content_Main\$ctl[0-9][0-9])"
@@ -108,8 +109,10 @@ def scrap_page_data(url_, file_name="scrapped_file.csv"):
     s.close()
 
 
-scrap_links_page()
-with open("races_file.csv", "r") as race_file:
+with open("race_links.csv", "r") as race_file:
     race_reader = csv.DictReader(race_file)
     for row in race_reader:
-        scrap_page_data(row["link"], file_name=f"{row['name']}_{row['date']}.csv")
+        try:
+            scrap_page_data(row["link"], file_name=f"{row['name']}_{row['date']}.csv")
+        except (KeyError, ConnectionError, PermissionError):
+            print(f"could not process this link{row['name'], row['link']}")
