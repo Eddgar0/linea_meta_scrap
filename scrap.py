@@ -5,6 +5,11 @@ import csv
 
 
 def scrap_table_header(parser):
+    """Scrap page header and return a string
+         args:
+               parser: BeautifulSoup html.parser instance
+         returns: returns a string
+    """
     data_header = parser.select("div #ctl00_Content_Main_divGrid table tr th")
     header_text = [header.text for header in data_header]
     header = ",".join(header_text) + "\n"
@@ -12,6 +17,11 @@ def scrap_table_header(parser):
 
 
 def scrap_table(parser):
+    """scrap content of the table
+        args:
+              parser: BeautifulSoup html.parser instance
+        returns: A list of strings
+    """
     table_row_tags = parser.select("div #ctl00_Content_Main_divGrid table tr")
     table_rows_tags = table_row_tags[1:-1]
     table_data = []
@@ -24,9 +34,10 @@ def scrap_table(parser):
 
 
 def scrap_links_page():
+    """Scrap all races links from main page of lineameta.com creates a file called race_links.csv"""
     # races goes from 1 to 180
     # Need to test if race have subraces inside
-    with open("race_links.csv", "w") as races_file:
+    with open("race_links.csv", "w", encoding="utf-8") as races_file:
             races_file.write("name,date,link\n")
 
     for g in range(1, 182, 20):
@@ -64,6 +75,11 @@ def scrap_links_page():
 
 
 def scrap_page_data(url_, file_name="scrapped_file.csv"):
+    """scrap all data from races on a given link from lineameta.com creates a csv file
+        args:
+              url_: url from lineameta.com race
+              file_name: name of the given File
+    """
     s = requests.Session()
     response = s.get(url_)
     content = response.content
@@ -72,7 +88,7 @@ def scrap_page_data(url_, file_name="scrapped_file.csv"):
     # Creating File and saving First page
 
     try:
-        with open(file_name, "w") as f:
+        with open(file_name, "w", encoding="utf-8") as f:
             f.write(scrap_table_header(parser))
             f.writelines(scrap_table(parser))
     except PermissionError:
@@ -100,7 +116,7 @@ def scrap_page_data(url_, file_name="scrapped_file.csv"):
         navigator = parser.select("#ctl00_Content_Main_grdTopPager")
 
         try:
-            with open(file_name, "a") as f:
+            with open(file_name, "a", encoding="utf-8") as f:
                 f.writelines(scrap_table(parser))
         except (FileNotFoundError, PermissionError):
             print("file could not be written and program can not continue")
@@ -109,10 +125,17 @@ def scrap_page_data(url_, file_name="scrapped_file.csv"):
     s.close()
 
 
-with open("race_links.csv", "r") as race_file:
-    race_reader = csv.DictReader(race_file)
-    for row in race_reader:
-        try:
-            scrap_page_data(row["link"], file_name=f"{row['name']}_{row['date']}.csv")
-        except (KeyError, ConnectionError, PermissionError):
-            print(f"could not process this link{row['name'], row['link']}")
+def main(csv_file="race_links.csv"):
+    failed_links = ""
+    with open(csv_file, "r") as race_file:
+        race_reader = csv.DictReader(race_file)
+        for row in race_reader:
+            try:
+                scrap_page_data(row["link"], file_name=f"{row['name']}_{row['date']}.csv")
+            except Exception as e :
+                failed_links= f"{row['name']},{row['date']},{row['link']}\n"
+                print(f"could not process this link{row['name'], row['link']} because{e}")
+    print(failed_links)
+
+if __name__ == "__main__":
+    main()
