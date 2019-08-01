@@ -2,6 +2,7 @@ from bs4 import BeautifulSoup
 import requests
 import re
 import csv
+import sys
 
 
 def scrap_table_header(parser):
@@ -138,4 +139,4 @@ def main(csv_file="race_links.csv"):
     print(failed_links)
 
 if __name__ == "__main__":
-    main()
+    main(csv_file=sys.argv[1])
