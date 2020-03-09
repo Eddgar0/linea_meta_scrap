@@ -34,14 +34,14 @@ def scrap_table(parser):
     return table_data
 
 
-def scrap_links_page():
+def scrap_links_page(number_races =201):
     """Scrap all races links from main page of lineameta.com creates a file called race_links.csv"""
-    # races goes from 1 to 180
+    # races goes from 1 to 180 (needs to automatically determine the las race
     # Need to test if race have subraces inside
     with open("race_links.csv", "w", encoding="utf-8") as races_file:
             races_file.write("name,date,link\n")
 
-    for g in range(1, 182, 20):
+    for g in range(1, number_races+1, 20):
         home_page = f"http://results.lineameta.com/StartPage.aspx?CId=17013&From={g}"
         print(f"Retrieving links from {home_page}")
         link_content = requests.get(home_page).content
@@ -101,7 +101,7 @@ def scrap_page_data(url_, file_name="scrapped_file.csv"):
     numbers = navigator[0].find_all("a")
     numbers = [n.text for n in numbers]
     numbers = [int(n) for n in numbers if n.isdigit()]
-    last_number = numbers[-1]
+    last_number = numbers[-1] if numbers else 0
     for page in range(2, last_number + 1):
         page_data = navigator[0].find("a", string=page)
         pattern = r"(ctl00\$Content_Main\$ctl[0-9][0-9])"
@@ -135,8 +135,46 @@ def main(csv_file="race_links.csv"):
                 scrap_page_data(row["link"], file_name=f"{row['name']}_{row['date']}.csv")
             except Exception as e :
                 failed_links= f"{row['name']},{row['date']},{row['link']}\n"
-                print(f"could not process this link{row['name'], row['link']} because{e}")
+                error = f"could not process this link{row['name'], row['link']} because{e}\n"
+                print(error)
+                try:
+                    with open("log.txt", "a") as ef:
+                        ef.write(error)
+                except (FileNotFoundError, PermissionError):
+                    continue
+
     print(failed_links)
 
+
 if __name__ == "__main__":
-    main(csv_file=sys.argv[1])
+    """ Script to scrap page Linea meta
+    scrap [options] [FILE or URL]
+    -a, --all 
+            Scrap the list of races urls and saves on file then read the list of races an scrap the races,
+            outpus a race file list and a .csv file for each race or sub-race.
+              
+    -l, --list
+            Download the races urls links from the pages,
+            outputs a .csv file named race_links.csv with all the races names and  links.
+            
+    -u, --url-scrap
+            scrap a race data given a url from linea meta web page.
+            Outputs a .csv file for each race or subrace of the given link.
+            
+    -f, --file-scrap
+            Scrap race data given a file containing linsk from races of linea, metadata.
+            if file name not given it will use race_links.csv as the race file
+          
+    
+    """
+
+    if len(sys.argv) > 1:
+        if sys.argv[1] == "--all" or sys.argv[1] == "-a":
+            scrap_links_page()
+            main()
+        elif sys.argv[1] == "--list" or sys.argv[1] == "-l":
+            scrap_links_page()
+        elif sys.argv[1] == "--url-scrap" or sys.argv[1] == "-u":
+            scrap_page_data(url_=sys.argv[2])
+        elif sys.argv[1] == "--file-scrap" or sys.argv[1] == "-f":
+            main()
