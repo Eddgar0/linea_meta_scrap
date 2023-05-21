@@ -34,19 +34,29 @@ def scrap_table(parser):
     return table_data
 
 
-def scrap_links_page(number_races =201):
+def scrap_links_page(number_races =10000):
     """Scrap all races links from main page of lineameta.com creates a file called race_links.csv"""
-    # races goes from 1 to 180 (needs to automatically determine the las race
-    # Need to test if race have subraces inside
+
     with open("race_links.csv", "w", encoding="utf-8") as races_file:
             races_file.write("name,date,link\n")
-
+    
+    
+    first_next ='' 
     for g in range(1, number_races+1, 20):
         home_page = f"http://results.lineameta.com/StartPage.aspx?CId=17013&From={g}"
         print(f"Retrieving links from {home_page}")
         link_content = requests.get(home_page).content
         parser = BeautifulSoup(link_content, "html.parser")
         all_races_table = parser.select("#tblAllRaces tr")
+        next = parser.select('#hlNext')[0].get('href')
+
+        if not first_next:
+            first_next = next
+        else:
+            if first_next == next:
+                print("We meet the beggining stopping..")
+                break
+ 
         for race in all_races_table:
             td = race.findAll("td")
             race_link_part = td[1].a.get("href")  # Get part  of the link without domain
