@@ -12,6 +12,7 @@ def scrap_table_header(parser):
          returns: returns a string
     """
     data_header = parser.select("div #ctl00_Content_Main_divGrid table tr th")
+    data_header = data_header.extract("#d-sm-none")
     header_text = [header.text for header in data_header]
     header = ",".join(header_text) + "\n"
     return header
@@ -114,14 +115,18 @@ def scrap_page_data(url_, file_name="scrapped_file.csv"):
     last_number = numbers[-1] if numbers else 0
     for page in range(2, last_number + 1):
         page_data = navigator[0].find("a", string=page)
-        pattern = r"(ctl00\$Content_Main\$ctl[0-9][0-9])"
-        js_method = page_data.get("href")
-        event_target = re.findall(pattern, js_method)[0]
-        view_state = parser.find("input", id="__VIEWSTATE")["value"]
+        # pattern = r"(ctl00\$Content_Main\$ctl[0-9][0-9])"
+        page_link_part = page_data.get("href").split('&', 2)
+        page_link_part = page_link_part[-1]
+        page_url = url_ + '&' + page_link_part
+
+        #event_target = re.findall(pattern, js_method)#[0]
+        #view_state = parser.find("input", id="__VIEWSTATE")["value"]
         print(f"Getting data for page{page}")
 
-        form_data = {"__EVENTTARGET": event_target, "__VIEWSTATE": view_state}
-        response = s.post(url_,  data=form_data, )
+        #form_data = {"__EVENTTARGET": event_target, "__VIEWSTATE": view_state}
+        #response = s.post(url_,  data=form_data, )
+        response = s.get(page_url)
         content = response.content
         parser = BeautifulSoup(content, "html.parser")
         navigator = parser.select("#ctl00_Content_Main_grdTopPager")
