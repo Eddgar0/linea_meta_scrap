@@ -1,6 +1,5 @@
 from bs4 import BeautifulSoup
 import requests
-import re
 import csv
 import sys
 
@@ -11,8 +10,13 @@ def scrap_table_header(parser):
                parser: BeautifulSoup html.parser instance
          returns: returns a string
     """
-    data_header = parser.select("div #ctl00_Content_Main_divGrid table tr th")
-    data_header = data_header.extract("#d-sm-none")
+
+    data_header = parser.select("div #ctl00_Content_Main_divGrid table tr")[0]
+    unwanted_header = data_header.find_all('th', class_="d-sm-none")
+    data_header =  data_header.select('th')
+    for u in unwanted_header:
+        data_header.remove(u)
+    
     header_text = [header.text for header in data_header]
     header = ",".join(header_text) + "\n"
     return header
@@ -24,11 +28,15 @@ def scrap_table(parser):
               parser: BeautifulSoup html.parser instance
         returns: A list of strings
     """
+
     table_row_tags = parser.select("div #ctl00_Content_Main_divGrid table tr")
     table_rows_tags = table_row_tags[1:-1]
     table_data = []
     for row in table_rows_tags:
         td_tags = row.find_all("td")
+        unwanted_tags = row.find_all("td", class_="d-sm-none")
+        for u in unwanted_tags:
+            td_tags.remove(u)
         table_row_text = [c.text for c in td_tags]
         table_row = ",".join(table_row_text) + "\n"
         table_data.append(table_row)
