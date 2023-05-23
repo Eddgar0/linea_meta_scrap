@@ -120,32 +120,31 @@ def scrap_page_data(url_, file_name="scrapped_file.csv"):
     numbers = navigator[0].find_all("a")
     numbers = [n.text for n in numbers]
     numbers = [int(n) for n in numbers if n.isdigit()]
-    last_number = numbers[-1] if numbers else 0
-    for page in range(2, last_number + 1):
-        page_data = navigator[0].find("a", string=page)
-        # pattern = r"(ctl00\$Content_Main\$ctl[0-9][0-9])"
-        page_link_part = page_data.get("href").split('&', 2)
-        page_link_part = page_link_part[-1]
-        page_url = url_ + '&' + page_link_part
+    if numbers:
+        last_number = numbers[-1]
+        page_data = navigator[0].find("a", string=2)
+        page_link_parts = page_data.get("href").split('&', 3)
+        page_link_parts = page_link_parts[-1].split('&')
 
-        #event_target = re.findall(pattern, js_method)#[0]
-        #view_state = parser.find("input", id="__VIEWSTATE")["value"]
-        print(f"Getting data for page{page}")
+        
+        for page in range(2, last_number + 1):
 
-        #form_data = {"__EVENTTARGET": event_target, "__VIEWSTATE": view_state}
-        #response = s.post(url_,  data=form_data, )
-        response = s.get(page_url)
-        content = response.content
-        parser = BeautifulSoup(content, "html.parser")
-        navigator = parser.select("#ctl00_Content_Main_grdTopPager")
+            page_link_parts[-2] = f"PageNo={page}"
+            page_url = url_ + '&' + '&'.join(page_link_parts)
+            print(f"Getting data for page{page}")
 
-        try:
-            with open(file_name, "a", encoding="utf-8") as f:
-                f.writelines(scrap_table(parser))
-        except (FileNotFoundError, PermissionError):
-            print("file could not be written and program can not continue")
-            s.close()
-            raise
+            response = s.get(page_url)
+            content = response.content
+            parser = BeautifulSoup(content, "html.parser")
+            navigator = parser.select("#ctl00_Content_Main_grdTopPager")
+    
+            try:
+                with open(file_name, "a", encoding="utf-8") as f:
+                    f.writelines(scrap_table(parser))
+            except (FileNotFoundError, PermissionError):
+                print("file could not be written and program can not continue")
+                s.close()
+                raise
     s.close()
 
 
